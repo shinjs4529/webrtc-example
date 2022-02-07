@@ -379,11 +379,14 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       options.networkIgnoreMask = 0;
     }
     peerConnectionClient.createPeerConnectionFactory(options);
+    System.err.println("for socketio, CallActivity onCreate");
+
 
     if (screencaptureEnabled) {
       startScreenCapture();
       System.err.println("for socketio, screencaptureEnabled is true");
     } else {
+      System.err.println("for socketio, screencaptureEnabled is false");
       startCall();
     }
   }
@@ -746,10 +749,13 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   // -----Implementation of AppRTCClient.AppRTCSignalingEvents ---------------
   // All callbacks are invoked from websocket signaling looper thread and
   // are routed to UI thread.
-  private void onConnectedToRoomInternal(final SignalingParameters params) {
+//  private void onConnectedToRoomInternal(final SignalingParameters params) {
+  private void onConnectedToRoomInternal() {
+    System.err.println("for socketio, onConnectedToRoomInternal");
+
     final long delta = System.currentTimeMillis() - callStartedTimeMs;
 
-    signalingParameters = params;
+//    signalingParameters = params;
     logAndToast("Creating peer connection, delay=" + delta + "ms");
     VideoCapturer videoCapturer = null;
     if (peerConnectionParameters.videoCallEnabled) {
@@ -758,34 +764,43 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     peerConnectionClient.createPeerConnection(
         localProxyVideoSink, remoteSinks, videoCapturer, signalingParameters);
 
+    System.err.println("for socketio, onConnectedToRoomInternal before getLocalDescription");
+
+    String sdpLocal = String.valueOf(peerConnectionClient.getLocalDescription());
+//      String sdpRemote = String.valueOf(peerConnectionClient.getRemoteDescription());
+    System.err.println("for socketio, at CallActivity.onCreate getLocalDescription() is: "+sdpLocal.substring(0,50));
+
     if (signalingParameters.initiator) {
       logAndToast("Creating OFFER...");
       // Create offer. Offer SDP will be sent to answering client in
       // PeerConnectionEvents.onLocalDescription event.
       peerConnectionClient.createOffer();
     } else {
-      if (params.offerSdp != null) {
-        peerConnectionClient.setRemoteDescription(params.offerSdp);
-        logAndToast("Creating ANSWER...");
-        // Create answer. Answer SDP will be sent to offering client in
-        // PeerConnectionEvents.onLocalDescription event.
-        peerConnectionClient.createAnswer();
-      }
-      if (params.iceCandidates != null) {
-        // Add remote ICE candidates from room.
-        for (IceCandidate iceCandidate : params.iceCandidates) {
-          peerConnectionClient.addRemoteIceCandidate(iceCandidate);
-        }
-      }
+//      if (params.offerSdp != null) {
+//        peerConnectionClient.setRemoteDescription(params.offerSdp);
+//        logAndToast("Creating ANSWER...");
+//        // Create answer. Answer SDP will be sent to offering client in
+//        // PeerConnectionEvents.onLocalDescription event.
+//        peerConnectionClient.createAnswer();
+//      }
+//      if (params.iceCandidates != null) {
+//        // Add remote ICE candidates from room.
+//        for (IceCandidate iceCandidate : params.iceCandidates) {
+//          peerConnectionClient.addRemoteIceCandidate(iceCandidate);
+//        }
+//      }
     }
   }
 
   @Override
   public void onConnectedToRoom(final SignalingParameters params) {
+//  public void onConnectedToRoom() {
     runOnUiThread(new Runnable() {
       @Override
       public void run() {
-        onConnectedToRoomInternal(params);
+        System.err.println("for socketio, onConnectedToRoom");
+//        onConnectedToRoomInternal(params);
+        onConnectedToRoomInternal();
       }
     });
   }
