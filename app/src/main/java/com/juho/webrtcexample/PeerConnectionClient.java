@@ -38,6 +38,9 @@ import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
 import org.webrtc.CameraVideoCapturer;
@@ -131,7 +134,7 @@ public class PeerConnectionClient {
   @Nullable
   private PeerConnectionFactory factory;
   @Nullable
-  public static PeerConnection peerConnection;
+  private PeerConnection peerConnection;
   @Nullable
   private AudioSource audioSource;
   @Nullable private SurfaceTextureHelper surfaceTextureHelper;
@@ -586,12 +589,32 @@ public class PeerConnectionClient {
       Log.e(TAG, "Peerconnection factory is not created");
       return;
     }
-    Log.d(TAG, "Create peer connection.");
+    Log.d(TAG, "for socketio, Create peer connection.");
 
     queuedRemoteCandidates = new ArrayList<>();
 
+    JSONObject json = new JSONObject();
+    //TODO set ice servers
+    //iceServers: [
+    //                {
+    //                    urls: "stun:stun.stunprotocol.org"
+    //                },
+    //                {
+    //                    urls: 'turn:numb.viagenie.ca',
+    //                    credential: 'muazkh',
+    //                    username: 'webrtc@live.com'
+    //                },
+    //            ]
+
+    List<PeerConnection.IceServer> iceServers = null;
+    try {
+      iceServers = iceServersFromJSON(json);
+    } catch (JSONException e) {
+      e.printStackTrace();
+    }
+
     PeerConnection.RTCConfiguration rtcConfig =
-        new PeerConnection.RTCConfiguration(signalingParameters.iceServers);
+        new PeerConnection.RTCConfiguration(iceServers);
     // TCP candidates are only useful when connecting to a server that supports
     // ICE-TCP.
     rtcConfig.tcpCandidatePolicy = PeerConnection.TcpCandidatePolicy.DISABLED;
@@ -657,6 +680,23 @@ public class PeerConnectionClient {
       }
     }
     Log.d(TAG, "Peer connection created.");
+  }
+
+  private List<PeerConnection.IceServer> iceServersFromJSON(JSONObject json)
+          throws JSONException {
+    JSONArray servers = json.getJSONArray("iceServers");
+    List<PeerConnection.IceServer> ret = new ArrayList<>();
+    for (int i = 0; i < servers.length(); ++i) {
+      JSONObject server = servers.getJSONObject(i);
+      String url = server.getString("urls");
+      String credential = server.has("credential") ? server.getString("credential") : "";
+      PeerConnection.IceServer turnServer =
+              PeerConnection.IceServer.builder(url)
+                      .setPassword(credential)
+                      .createIceServer();
+      ret.add(turnServer);
+    }
+    return ret;
   }
 
   private File createRtcEventLogOutputFile() {
@@ -864,6 +904,14 @@ public class PeerConnectionClient {
       SessionDescription sdpRemote = new SessionDescription(desc.type, sdp);
       peerConnection.setRemoteDescription(sdpObserver, sdpRemote);
     });
+  }
+
+  public SessionDescription getRemoteDescription(){
+    return peerConnection.getRemoteDescription();
+  }
+
+  public SessionDescription getLocalDescription(){
+    return peerConnection.getLocalDescription();
   }
 
   public void stopVideoSource() {

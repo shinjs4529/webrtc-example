@@ -76,6 +76,7 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
         handler.post(new Runnable() {
             @Override
             public void run() {
+                System.err.println("for socketio, in connectToRoom");
                 connectToRoomInternal();
             }
         });
@@ -95,28 +96,30 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
     // Connects to room - function runs on a local looper thread.
     private void connectToRoomInternal() {
         String connectionUrl = getConnectionUrl(connectionParameters);
-        Log.d(TAG, "for socketio, Connect to room: " + connectionUrl);
+        Log.d(TAG, "for socketio, connectToRoomInternal, room: " + connectionUrl);
         roomState = ConnectionState.NEW;
 //        wsClient = new WebSocketChannelClient(handler, this);
 
-        RoomParametersFetcher.RoomParametersFetcherEvents callbacks = new RoomParametersFetcher.RoomParametersFetcherEvents() {
-            @Override
-            public void onSignalingParametersReady(final SignalingParameters params) {
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        signalingParametersReady(params);
-                    }
-                });
-            }
-
-            @Override
-            public void onSignalingParametersError(String description) {
-                reportError(description);
-            }
-        };
-
-        new RoomParametersFetcher(connectionUrl, null, callbacks).makeRequest();
+        //TODO call onSignalingParametersReady
+        signalingParametersReady();
+//        RoomParametersFetcher.RoomParametersFetcherEvents callbacks = new RoomParametersFetcher.RoomParametersFetcherEvents() {
+//            @Override
+//            public void onSignalingParametersReady(final SignalingParameters params) {
+//                handler.post(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        System.err.println("for socketio, in onSignalingParametersReady");
+//                        signalingParametersReady(params);
+//                    }
+//                });
+//            }
+//
+//            @Override
+//            public void onSignalingParametersError(String description) {
+//                reportError(description);
+//            }
+//        };
+//        new RoomParametersFetcher(connectionUrl, null, callbacks).makeRequest();
     }
 
     // Disconnect from room and send bye messages - runs on a local looper thread.
@@ -162,25 +165,28 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
 
     // Callback issued when room parameters are extracted. Runs on local
     // looper thread.
-    private void signalingParametersReady(final SignalingParameters signalingParameters) {
+//    private void signalingParametersReady(final SignalingParameters signalingParameters) {
+    private void signalingParametersReady() {
         Log.d(TAG, "Room connection completed.");
-        if (connectionParameters.loopback
-                && (!signalingParameters.initiator || signalingParameters.offerSdp != null)) {
-            reportError("Loopback room is busy.");
-            return;
-        }
-        if (!connectionParameters.loopback && !signalingParameters.initiator
-                && signalingParameters.offerSdp == null) {
-            Log.w(TAG, "No offer SDP in room response.");
-        }
-        initiator = signalingParameters.initiator;
-        messageUrl = getMessageUrl(connectionParameters, signalingParameters);
-        leaveUrl = getLeaveUrl(connectionParameters, signalingParameters);
+//        if (connectionParameters.loopback
+//                && (!signalingParameters.initiator || signalingParameters.offerSdp != null)) {
+//            reportError("Loopback room is busy.");
+//            return;
+//        }
+//        if (!connectionParameters.loopback && !signalingParameters.initiator
+//                && signalingParameters.offerSdp == null) {
+//            Log.w(TAG, "No offer SDP in room response.");
+//        }
+//        initiator = signalingParameters.initiator;
+//        messageUrl = getMessageUrl(connectionParameters, signalingParameters);
+//        leaveUrl = getLeaveUrl(connectionParameters, signalingParameters);
         Log.d(TAG, "Message URL: " + messageUrl);
         Log.d(TAG, "Leave URL: " + leaveUrl);
         roomState = ConnectionState.CONNECTED;
 
         // Fire connection and signaling parameters events.
+//        events.onConnectedToRoom(signalingParameters);
+        SignalingParameters signalingParameters = null;
         events.onConnectedToRoom(signalingParameters);
 
         // Connect and register WebSocket client.
