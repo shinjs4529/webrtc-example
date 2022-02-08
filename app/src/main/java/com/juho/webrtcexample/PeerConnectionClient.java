@@ -357,14 +357,14 @@ public class PeerConnectionClient {
     executor.execute(() -> createPeerConnectionFactoryInternal(options));
   }
 
-  public void createPeerConnection(final VideoSink localRender, final VideoSink remoteSink,
-      final VideoCapturer videoCapturer, final AppRTCClient.SignalingParameters signalingParameters) {
-    if (peerConnectionParameters.videoCallEnabled && videoCapturer == null) {
-      Log.w(TAG, "Video call enabled but no video capturer provided.");
-    }
-    createPeerConnection(
-        localRender, Collections.singletonList(remoteSink), videoCapturer, signalingParameters);
-  }
+//  public void createPeerConnection(final VideoSink localRender, final VideoSink remoteSink,
+//      final VideoCapturer videoCapturer, final AppRTCClient.SignalingParameters signalingParameters) {
+//    if (peerConnectionParameters.videoCallEnabled && videoCapturer == null) {
+//      Log.w(TAG, "Video call enabled but no video capturer provided.");
+//    }
+//    createPeerConnection(
+//        localRender, Collections.singletonList(remoteSink), videoCapturer, signalingParameters);
+//  }
 
   public void createPeerConnection(final VideoSink localRender, final List<VideoSink> remoteSinks,
       final VideoCapturer videoCapturer, final AppRTCClient.SignalingParameters signalingParameters) {
@@ -594,7 +594,23 @@ public class PeerConnectionClient {
     queuedRemoteCandidates = new ArrayList<>();
 
     JSONObject json = new JSONObject();
-    //TODO set ice servers
+    JSONArray array = new JSONArray();
+    JSONObject url1 = new JSONObject();
+    JSONObject url2 = new JSONObject();
+    try {
+//      url1.put("urls", "stun:stun.stunprotocol.org");
+      url1.put("urls", "stun:stun.l.google.com:19302");
+      url2.put("urls", "turn:numb.viagenie.ca");
+      url2.put("credential", "muazkh");
+      url2.put("username", "webrtc@live.com");
+
+      array.put(url1);
+      array.put(url2);
+
+      json.put("iceServers", array);
+    } catch (JSONException e) {
+      e.printStackTrace();
+    }
     //iceServers: [
     //                {
     //                    urls: "stun:stun.stunprotocol.org"
@@ -606,9 +622,12 @@ public class PeerConnectionClient {
     //                },
     //            ]
 
+
     List<PeerConnection.IceServer> iceServers = null;
     try {
+      System.err.println("for socketio, iceServers json is: "+json);
       iceServers = iceServersFromJSON(json);
+      System.err.println("for socketio, iceServers are: "+iceServers);
     } catch (JSONException e) {
       e.printStackTrace();
     }
@@ -629,16 +648,17 @@ public class PeerConnectionClient {
 
     peerConnection = factory.createPeerConnection(rtcConfig, pcObserver);
 
-    if (dataChannelEnabled) {
-      DataChannel.Init init = new DataChannel.Init();
-      init.ordered = peerConnectionParameters.dataChannelParameters.ordered;
-      init.negotiated = peerConnectionParameters.dataChannelParameters.negotiated;
-      init.maxRetransmits = peerConnectionParameters.dataChannelParameters.maxRetransmits;
-      init.maxRetransmitTimeMs = peerConnectionParameters.dataChannelParameters.maxRetransmitTimeMs;
-      init.id = peerConnectionParameters.dataChannelParameters.id;
-      init.protocol = peerConnectionParameters.dataChannelParameters.protocol;
-      dataChannel = peerConnection.createDataChannel("ApprtcDemo data", init);
-    }
+//    if (dataChannelEnabled) {
+//      System.err.println("for socketio, dataChannel is enabled");
+//      DataChannel.Init init = new DataChannel.Init();
+//      init.ordered = peerConnectionParameters.dataChannelParameters.ordered;
+//      init.negotiated = peerConnectionParameters.dataChannelParameters.negotiated;
+//      init.maxRetransmits = peerConnectionParameters.dataChannelParameters.maxRetransmits;
+//      init.maxRetransmitTimeMs = peerConnectionParameters.dataChannelParameters.maxRetransmitTimeMs;
+//      init.id = peerConnectionParameters.dataChannelParameters.id;
+//      init.protocol = peerConnectionParameters.dataChannelParameters.protocol;
+//      dataChannel = peerConnection.createDataChannel("ApprtcDemo data", init);
+//    }
     isInitiator = false;
 
     // Set INFO libjingle logging.
@@ -646,6 +666,9 @@ public class PeerConnectionClient {
     Logging.enableLogToDebugOutput(Logging.Severity.LS_INFO);
 
     List<String> mediaStreamLabels = Collections.singletonList("ARDAMS");
+
+    peerConnection.addTrack(createAudioTrack(), mediaStreamLabels);
+
     if (isVideoCallEnabled()) {
       peerConnection.addTrack(createVideoTrack(videoCapturer), mediaStreamLabels);
       // We can add the renderers right away because we don't need to wait for an
@@ -656,7 +679,7 @@ public class PeerConnectionClient {
         remoteVideoTrack.addSink(remoteSink);
       }
     }
-    peerConnection.addTrack(createAudioTrack(), mediaStreamLabels);
+
     if (isVideoCallEnabled()) {
       findVideoSender();
     }
@@ -669,8 +692,9 @@ public class PeerConnectionClient {
                 ParcelFileDescriptor.MODE_READ_WRITE | ParcelFileDescriptor.MODE_CREATE
                     | ParcelFileDescriptor.MODE_TRUNCATE);
         factory.startAecDump(aecDumpFileDescriptor.detachFd(), -1);
+        Log.e(TAG, "for socketio, opened aecdump file");
       } catch (IOException e) {
-        Log.e(TAG, "Can not open aecdump file", e);
+        Log.e(TAG, "for socketio, Can not open aecdump file", e);
       }
     }
 
@@ -680,6 +704,10 @@ public class PeerConnectionClient {
       }
     }
     Log.d(TAG, "Peer connection created.");
+    System.err.println("for socketio, peerConnection configuration complete");
+    String sdpLocal = String.valueOf(peerConnection.getLocalDescription());
+//      String sdpRemote = String.valueOf(peerConnectionClient.getRemoteDescription());
+    System.err.println("for socketio, getLocalDescription() is: "+sdpLocal);
   }
 
   private List<PeerConnection.IceServer> iceServersFromJSON(JSONObject json)
@@ -690,12 +718,29 @@ public class PeerConnectionClient {
       JSONObject server = servers.getJSONObject(i);
       String url = server.getString("urls");
       String credential = server.has("credential") ? server.getString("credential") : "";
+      String username = server.has("username") ? server.getString("username") : "";
       PeerConnection.IceServer turnServer =
               PeerConnection.IceServer.builder(url)
+                      .setUsername(username)
                       .setPassword(credential)
                       .createIceServer();
       ret.add(turnServer);
     }
+//    JSONObject turn = servers.getJSONObject(0);
+//    JSONObject stun = servers.getJSONObject(1);
+//    PeerConnection.IceServer turnServer =
+//            PeerConnection.IceServer.builder(turn.getString("urls"))
+////                    .setTlsCertPolicy(PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK)
+//                    .createIceServer();
+//    PeerConnection.IceServer stunServer =
+//            PeerConnection.IceServer.builder(stun.getString("urls"))
+//                    .setUsername(stun.getString("username"))
+//                    .setPassword(stun.getString("credential"))
+////                    .setTlsCertPolicy(PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK)
+//                    .createIceServer();
+//    ret.add(turnServer);
+//    ret.add(stunServer);
+    //[[stun:stun.stunprotocol.org] [:] [TLS_CERT_POLICY_SECURE] [] [null] [null], [turn:numb.viagenie.ca] [webrtc@live.com:muazkh] [TLS_CERT_POLICY_SECURE] [] [null] [null]]
     return ret;
   }
 
@@ -864,7 +909,9 @@ public class PeerConnectionClient {
     executor.execute(() -> {
       if (peerConnection != null && !isError) {
         if (queuedRemoteCandidates != null) {
-          queuedRemoteCandidates.add(candidate);
+          System.out.println("for socketio, queuedRemoteCandidates is not null");
+//          queuedRemoteCandidates.add(candidate);
+          peerConnection.addIceCandidate(candidate);
         } else {
           peerConnection.addIceCandidate(candidate);
         }
@@ -885,10 +932,14 @@ public class PeerConnectionClient {
   }
 
   public void setRemoteDescription(final SessionDescription desc) {
+    System.err.println("for socketio, in setRemoteDescription()");
     executor.execute(() -> {
+      System.err.println("for socketio, in setRemoteDescription() 1");
       if (peerConnection == null || isError) {
+        System.err.println("for socketio, in setRemoteDescription() peerConnection is not null!!");//peerConnection is null
         return;
       }
+      System.err.println("for socketio, in setRemoteDescription() 3");
       String sdp = desc.description;
       if (preferIsac) {
         sdp = preferCodec(sdp, AUDIO_CODEC_ISAC, true);
@@ -985,6 +1036,7 @@ public class PeerConnectionClient {
 
   @Nullable
   private VideoTrack createVideoTrack(VideoCapturer capturer) {
+    System.err.println("for socketio, Starting videotrack");
     surfaceTextureHelper =
         SurfaceTextureHelper.create("CaptureThread", rootEglBase.getEglBaseContext());
     videoSource = factory.createVideoSource(capturer.isScreencast());
@@ -1193,6 +1245,7 @@ public class PeerConnectionClient {
   }
 
   private void drainCandidates() {
+    System.err.println("for socketio, drainCandidates() now");
     if (queuedRemoteCandidates != null) {
       Log.d(TAG, "Add " + queuedRemoteCandidates.size() + " remote candidates");
       for (IceCandidate candidate : queuedRemoteCandidates) {
@@ -1350,11 +1403,15 @@ public class PeerConnectionClient {
   private class SDPObserver implements SdpObserver {
     @Override
     public void onCreateSuccess(final SessionDescription desc) {
+      System.err.println("for socketio, onCreateSuccess");
       if (localDescription != null) {
         reportError("Multiple SDP create.");
         return;
       }
       String sdp = desc.description;
+      sdp = sdp.replace("actpass", "active");
+      //TODO 통화 받을 때는 a=setup:actpass로, 걸 때는 a=setup:passive로 해야 함
+//      System.err.println("for socketio, onCreateSuccess localDescription is: "+sdp);
       if (preferIsac) {
         sdp = preferCodec(sdp, AUDIO_CODEC_ISAC, true);
       }
@@ -1363,7 +1420,7 @@ public class PeerConnectionClient {
       }
       final SessionDescription newDesc = new SessionDescription(desc.type, sdp);
       localDescription = newDesc;
-      System.err.println("for socketio, onCreateSuccess localDescription is: "+localDescription);
+
       executor.execute(() -> {
         if (peerConnection != null && !isError) {
           Log.d(TAG, "Set local SDP from " + desc.type);
@@ -1378,17 +1435,19 @@ public class PeerConnectionClient {
         if (peerConnection == null || isError) {
           return;
         }
+        //TODO isInitiator 로 caller, taker 적용
         if (isInitiator) {
           // For offering peer connection we first create offer and set
           // local SDP, then after receiving answer set remote SDP.
           if (peerConnection.getRemoteDescription() == null) {
             // We've just set our local SDP so time to send it.
-            Log.d(TAG, "Local SDP set succesfully");
+            Log.d(TAG, "for socketio, Local SDP set succesfully");
+            drainCandidates();//TODO 이 동작이 맞나?
             events.onLocalDescription(localDescription);
           } else {
             // We've just set remote description, so drain remote
             // and send local ICE candidates.
-            Log.d(TAG, "Remote SDP set succesfully");
+            Log.d(TAG, "for socketio, Remote SDP set succesfully");
             drainCandidates();
           }
         } else {
@@ -1397,13 +1456,11 @@ public class PeerConnectionClient {
           if (peerConnection.getLocalDescription() != null) {
             // We've just set our local SDP so time to send it, drain
             // remote and send local ICE candidates.
-            Log.d(TAG, "Local SDP set succesfully");
             events.onLocalDescription(localDescription);
             drainCandidates();
           } else {
             // We've just set remote SDP - do nothing for now -
             // answer will be created soon.
-            Log.d(TAG, "Remote SDP set succesfully");
           }
         }
       });

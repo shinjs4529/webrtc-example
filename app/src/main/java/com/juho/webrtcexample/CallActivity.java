@@ -289,6 +289,16 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       finish();
       return;
     }
+    appRtcClient = new SocketIOClient(this, roomId);
+    while(!appRtcClient.isSocketConnectionComplete()){
+      System.err.println("SocketIOClient is not Connected yet...");
+      try {
+        Thread.sleep(500);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+    }
+    System.err.println("SocketIOClient is Connected!");
 
     boolean loopback = intent.getBooleanExtra(EXTRA_LOOPBACK, false);
     boolean tracing = intent.getBooleanExtra(EXTRA_TRACING, false);
@@ -339,7 +349,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
 //      Log.i(TAG, "Using DirectRTCClient because room name looks like an IP.");
 //      appRtcClient = new DirectRTCClient(this);
 //    }
-    appRtcClient = new SocketIOClient(this, roomId);
+//    appRtcClient = new SocketIOClient(this, roomId);
 
     // Create connection parameters.
     String urlParameters = intent.getStringExtra(EXTRA_URLPARAMETERS);
@@ -764,18 +774,27 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     peerConnectionClient.createPeerConnection(
         localProxyVideoSink, remoteSinks, videoCapturer, signalingParameters);
 
-    System.err.println("for socketio, onConnectedToRoomInternal before getLocalDescription");
+//    System.err.println("for socketio, onConnectedToRoomInternal before getLocalDescription");
+//    while(peerConnectionClient==null){
+//      System.err.println("for socketio, peerConnectionClient is null");
+//      try {
+//        Thread.sleep(500);
+//      } catch (InterruptedException e) {
+//        e.printStackTrace();
+//      }
+//    }
+    System.err.println("for socketio, peerConnectionClient is NOT null");
 
-    String sdpLocal = String.valueOf(peerConnectionClient.getLocalDescription());
-//      String sdpRemote = String.valueOf(peerConnectionClient.getRemoteDescription());
-    System.err.println("for socketio, at CallActivity.onCreate getLocalDescription() is: "+sdpLocal.substring(0,50));
+//    String sdpLocal = String.valueOf(peerConnectionClient.getLocalDescription());
+////      String sdpRemote = String.valueOf(peerConnectionClient.getRemoteDescription());
+//    System.err.println("for socketio, at CallActivity.onCreate getLocalDescription() is: "+sdpLocal.substring(0,50));
 
-    if (signalingParameters.initiator) {
+//    if (signalingParameters.initiator) {
       logAndToast("Creating OFFER...");
       // Create offer. Offer SDP will be sent to answering client in
       // PeerConnectionEvents.onLocalDescription event.
       peerConnectionClient.createOffer();
-    } else {
+//    } else {
 //      if (params.offerSdp != null) {
 //        peerConnectionClient.setRemoteDescription(params.offerSdp);
 //        logAndToast("Creating ANSWER...");
@@ -789,7 +808,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
 //          peerConnectionClient.addRemoteIceCandidate(iceCandidate);
 //        }
 //      }
-    }
+//    }
   }
 
   @Override
@@ -826,7 +845,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
         logAndToast("Creating ANSWER...");
         // Create answer. Answer SDP will be sent to offering client in
         // PeerConnectionEvents.onLocalDescription event.
-        peerConnectionClient.createAnswer();
+//        peerConnectionClient.createAnswer();//TODO 빼야하나
       }
     });
   }
@@ -887,11 +906,13 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       public void run() {
         if (appRtcClient != null) {
           logAndToast("Sending " + desc.type + ", delay=" + delta + "ms");
-          if (signalingParameters.initiator) {
-            appRtcClient.sendOfferSdp(desc);
-          } else {
-            appRtcClient.sendAnswerSdp(desc);
-          }
+          //TODO signalingParameters.initiator사용하기 받기 구현하기
+//          if (signalingParameters.initiator) {
+//            appRtcClient.sendOfferSdp(desc);
+//          } else {
+//            appRtcClient.sendAnswerSdp(desc);
+//          }
+          appRtcClient.sendAnswerSdp(desc);
         }
         if (peerConnectionParameters.videoMaxBitrate > 0) {
           Log.d(TAG, "Set video maximum bitrate: " + peerConnectionParameters.videoMaxBitrate);

@@ -75,6 +75,11 @@ public class DirectRTCClient implements AppRTCClient, TCPChannelClient.TCPChanne
    * IP address matching IP_PATTERN.
    */
   @Override
+  public boolean isSocketConnectionComplete(){
+    return false;
+  }
+
+  @Override
   public void connectToRoom(RoomConnectionParameters connectionParameters) {
     this.connectionParameters = connectionParameters;
 

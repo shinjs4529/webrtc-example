@@ -40,6 +40,8 @@ public interface AppRTCClient {
     }
   }
 
+  boolean isSocketConnectionComplete();
+
   /**
    * Asynchronously connect to an AppRTC room URL using supplied connection
    * parameters. Once connection is established onConnectedToRoom()

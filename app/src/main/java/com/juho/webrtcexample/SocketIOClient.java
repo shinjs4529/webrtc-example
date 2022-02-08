@@ -32,9 +32,11 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
     private String roomNumber="1506";
 //    private final String serverUrl = "https://dev.roaigen.com:7061";
     private final String serverUrl = "https://mybom-dev.herokuapp.com";
-    private String myID = "";
-    private String otherUserID = "";
+    private String myID = "default myID";
+    private String otherUserID = "default otherUserID";
     private String sessionID = "default sessionID";
+
+    private boolean connectionFlag = false;
 
 
     //------------------------
@@ -66,6 +68,10 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
         init();
     }
     //--------------------------
+    @Override
+    public boolean isSocketConnectionComplete(){
+        return connectionFlag;
+    }
     // --------------------------------------------------------------------
     // AppRTCClient interface implementation.
     // Asynchronously connect to an AppRTC room URL using supplied connection
@@ -200,14 +206,33 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
         handler.post(new Runnable() {
             @Override
             public void run() {
+                System.err.println("for socketio, Start sendOfferSdp");
                 if (roomState != ConnectionState.CONNECTED) {
                     reportError("Sending offer SDP in non connected state.");
                     return;
                 }
+//                JSONObject json = new JSONObject();
+//                jsonPut(json, "sdp", sdp.description);
+//                jsonPut(json, "type", "offer");
+//                sendPostMessage(MessageType.MESSAGE, messageUrl, json.toString());
+                //TODO send sdp
+                JSONObject description = new JSONObject();
+                jsonPut(description, "sdp", sdp.description);
+                System.err.println("for socketio, sendOfferSdp description is: "+description);
+                jsonPut(description, "type", "offer");
+
                 JSONObject json = new JSONObject();
-                jsonPut(json, "sdp", sdp.description);
-                jsonPut(json, "type", "offer");
-                sendPostMessage(MessageType.MESSAGE, messageUrl, json.toString());
+                jsonPut(json, "to", otherUserID);
+                System.err.println("for socketio, sendOfferSdp otherUserID is: "+otherUserID);
+                jsonPut(json, "from", myID);
+                System.err.println("for socketio, sendOfferSdp myID is: "+myID);
+                jsonPut(json, "description", description);
+                jsonPut(json, "session_id", sessionID);
+                System.err.println("for socketio, sendOfferSdp session_id is: "+sessionID);
+                jsonPut(json, "media", "video");
+
+                emit("offer", json);
+
                 if (connectionParameters.loopback) {
                     // In loopback mode rename this offer to answer and route it back.
                     SessionDescription sdpAnswer = new SessionDescription(
@@ -234,10 +259,13 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
 
                 JSONObject json = new JSONObject();
                 jsonPut(json, "to", otherUserID);
+                System.err.println("for socketio, sendAnswerSdp otherUserID is: "+otherUserID);
                 jsonPut(json, "from", myID);
+                System.err.println("for socketio, sendAnswerSdp myID is: "+myID);
                 jsonPut(json, "description", description);
                 jsonPut(json, "session_id", sessionID);
-                jsonPut(json, "media", "video");
+                System.err.println("for socketio, sendAnswerSdp sessionID is: "+sessionID);
+//                jsonPut(json, "media", "video");
 
                 emit("answer", json);
             }
@@ -255,6 +283,7 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
                 jsonPut(candidate, "sdpMLineIndex", iceCandidate.sdpMLineIndex);
                 jsonPut(candidate, "sdpMid", iceCandidate.sdpMid);
                 jsonPut(candidate, "candidate", iceCandidate.sdp);
+                //TODO 통화 caller와 taker일 때 동작 구분
                 if (initiator) {
                     // Call initiator sends ice candidates to GAE server.
                     if (roomState != ConnectionState.CONNECTED) {
@@ -269,9 +298,13 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
                     // Call receiver sends ice candidates to websocket server.
                     JSONObject json = new JSONObject();
                     jsonPut(json, "to", otherUserID);
+                    System.err.println("for socketio, sendLocalIceCandidate otherUserID is: "+otherUserID);
                     jsonPut(json, "from", myID);
+                    System.err.println("for socketio, sendLocalIceCandidate myID is: "+myID);
                     jsonPut(json, "candidate", candidate);
+                    System.err.println("for socketio, sendLocalIceCandidate candidate is: "+candidate);
                     jsonPut(json, "session_id", sessionID);
+                    System.err.println("for socketio, sendLocalIceCandidate sessionID is: "+sessionID);
 
                     emit("ice-candidate", json);
                 }
@@ -329,21 +362,21 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
 
     private void init() {
         try {
-            System.out.println("[Socket.io] Connecting to server: "+serverUrl);
+            System.out.println("[Socketio] Connecting to server: "+serverUrl);
 
             mSocket = IO.socket(serverUrl);
 
             mSocket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
                 @Override
                 public void call(Object... args) {
-                    System.out.println((new Date().toString())+" [Socket.io] Connected");
+                    System.out.println((new Date().toString())+" [Socketio] Connected");
                 }
             });
 
             mSocket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
                 @Override
                 public void call(Object... args) {
-                    System.err.println((new Date().toString())+" [Socket.io] Disconnected");
+                    System.err.println((new Date().toString())+" [Socketio] Disconnected");
                 }
             });
 
@@ -360,7 +393,7 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
-                    System.err.println((new Date().toString())+" [Socket.io] room-info: "+myID);
+                    System.err.println((new Date().toString())+" [Socketio] room-info: "+myID);
                     //myID.current = payload.myID
 
                 }
@@ -370,10 +403,11 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
                 @Override
                 public void call(Object... args) {
                     String payload = args[0].toString();
-                    System.err.println((new Date().toString())+" [Socket.io] ice-candidate");
-                    System.err.println((new Date().toString())+" [Socket.io] payload is: "+payload);
+                    System.err.println((new Date().toString())+" [Socketio] ice-candidate");
+                    System.err.println((new Date().toString())+" [Socketio] payload is: "+payload);
 
                     JSONObject remoteCandidate = null;
+//                    JSONObject remoteCandidate = null;
 
                     try {
                         remoteCandidate = (JSONObject) new JSONObject(payload).get("candidate");
@@ -396,8 +430,8 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
                 @Override
                 public void call(Object... args) {
                     String payload = args[0].toString();
-                    System.err.println((new Date().toString())+" [Socket.io] answer");
-                    System.err.println((new Date().toString())+" [Socket.io] payload is: "+payload);
+                    System.err.println((new Date().toString())+" [Socketio] answer");
+                    System.err.println((new Date().toString())+" [Socketio] payload is: "+payload);
                     JSONObject description = null;
                     String sdp = null;
                     String type = null;
@@ -419,8 +453,8 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
                 @Override
                 public void call(Object... args) {
                     String payload = args[0].toString();
-                    System.err.println((new Date().toString())+" [Socket.io] offer");
-                    System.err.println((new Date().toString())+" [Socket.io] payload is: "+payload);
+                    System.err.println((new Date().toString())+" [Socketio] offer");
+                    System.err.println((new Date().toString())+" [Socketio] payload is: "+payload);
                     JSONObject payloadJson = null;
                     JSONObject description = null;
                     String sdp = null;
@@ -450,17 +484,19 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
                 public void call(Object... args) {
                     String otherUser = args[0].toString();
                     otherUserID = otherUser;
-                    System.err.println((new Date().toString())+" [Socket.io] other-user: "+otherUserID);
+                    System.err.println((new Date().toString())+" [Socketio] other-user: "+otherUserID);
                     //otherUser.current = userID;
                     callUser(otherUserID);
                     //상대방에게 condidate먼저 보내기
                     //callUser();//otherUserID공유하니 인수 필요없을지도..?
+                    //TODO connection이 완료되면 CallActivity의 동작이 이어지도록 해야함1
+                    connectionFlag = true;
                 }
             });
             mSocket.on("user-disconnected", new Emitter.Listener() {
                 @Override
                 public void call(Object... args) {
-                    System.err.println((new Date().toString())+" [Socket.io] user-disconnected");
+                    System.err.println((new Date().toString())+" [Socketio] user-disconnected");
                     events.onChannelClose();
                 }
             });
@@ -472,7 +508,9 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
                     //이쪽에서 걸었을 때 상대방의 참여 이벤트
                     //otherUser.current = userID
                     otherUserID = takerID;
-                    System.err.println((new Date().toString())+" [Socket.io] user-joined: "+otherUserID);
+                    System.err.println((new Date().toString())+" [Socketio] user-joined: "+otherUserID);
+                    //TODO connection이 완료되면 CallActivity의 동작이 이어지도록 해야함1
+                    connectionFlag = true;
                 }
             });
 
@@ -480,7 +518,7 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
             mSocket.connect();
 //            String connectionUrl = getConnectionUrl(connectionParameters);
 //            String roomID = this.connectionParameters.roomId;
-            System.err.println("[Socket.io] roomNumber: "+roomNumber);
+            System.err.println("[Socketio] roomNumber: "+roomNumber);
             String roomID = roomNumber;
             String contact = "13131313";//caller(robotID), //현재 주소에서 &contact=?을 가져옴
             String timestamp = "2022-01-27T01:59:08.077Z";
@@ -490,7 +528,7 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
             jsonPut(json, "contact", contact);
             jsonPut(json, "timestamp", timestamp);
 
-            System.err.println((new Date().toString())+" [Socket.io] emitting join-room: "+json.toString());
+            System.err.println((new Date().toString())+" [Socketio] emitting join-room: "+json.toString());
             emit("join-room", json);
             //로그 보려면 서버컴 docker로 보기
             Log.d("SOCKET", "Connection success : " + mSocket.id());
@@ -504,6 +542,7 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
     }
 
     public void emit(String eventName, Object message) {
+        Log.e(TAG, "for socketio, emitting: "+eventName);
         mSocket.emit(eventName, message);
     }
 
@@ -542,24 +581,18 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
 //        media: 'video'
 
         sessionID = myID+"-"+targetUser;
+
+        //여기 대신에 sendOfferSdp에서 동작
 //        String description = "my sdp";//TODO get sdp
-        //PeerConnectionClient의 peerConnection.getLocalDescription가 필요
-//        PeerConnectionClient.peerConnection.getLocalDescription();
-//
-//        JSONObject json = new JSONObject();
-//        jsonPut(json, "to", targetUser);
-//        jsonPut(json, "from", myID);
-//        jsonPut(json, "description", description);
-//        jsonPut(json, "session_id", sessionID);
-//        jsonPut(json, "media", "video");
-//
-//        emit("offer", json);
     }
 
     public void handleOfferCall(String type, String sdp, String from){
-        System.err.println("[Socket.io] handleOfferCall type: "+type);
-        System.err.println("[Socket.io] handleOfferCall from: "+from);
-        createPeer(from);
+        //TODO offer가 맞을거 같은데 have-local-offer 오류가 나서 일단 answer로 수정
+        type = "answer";
+
+        System.err.println("[Socketio] handleOfferCall type: "+type);
+        System.err.println("[Socketio] handleOfferCall from: "+from);
+//        createPeer(from);
 
         SessionDescription sessionDescription = new SessionDescription(
                 SessionDescription.Type.fromCanonicalForm(type), sdp);
@@ -573,21 +606,13 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
         //            }
         //            socketRef.current.emit("answer", payload);
         //        })
-        JSONObject json = new JSONObject();
-        String roomID = roomNumber;
-        String description = "my sdp2";//TODO get mysdp
-        jsonPut(json, "to", otherUserID);
-        jsonPut(json, "from", from);
-        jsonPut(json, "description", description);
-        jsonPut(json, "session_id", sessionID);
-
-        emit("answer", json);
+        //여기 대신에 sendAnswerSdp에서 동작
     }
 
     public void handleAnswerCall(String type, String sdp){
-        SessionDescription sessionDescription = new SessionDescription(
-                SessionDescription.Type.fromCanonicalForm(type), sdp);
-        events.onRemoteDescription(sessionDescription);
+//        SessionDescription sessionDescription = new SessionDescription(
+//                SessionDescription.Type.fromCanonicalForm(type), sdp);
+//        events.onRemoteDescription(sessionDescription);
     }
 
     public void handleNewICECandidateMsg(JSONObject remoteCandidate) throws JSONException {

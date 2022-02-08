@@ -68,6 +68,11 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelClient.
   // Asynchronously connect to an AppRTC room URL using supplied connection
   // parameters, retrieves room parameters and connect to WebSocket server.
   @Override
+  public boolean isSocketConnectionComplete(){
+    return false;
+  }
+
+  @Override
   public void connectToRoom(RoomConnectionParameters connectionParameters) {
     this.connectionParameters = connectionParameters;
     handler.post(new Runnable() {
