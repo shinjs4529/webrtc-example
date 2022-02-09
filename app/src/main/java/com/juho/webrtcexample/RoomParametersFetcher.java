@@ -11,9 +11,6 @@
 package com.juho.webrtcexample;
 
 import android.util.Log;
-
-import com.juho.webrtcexample.util.AsyncHttpURLConnection;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -21,7 +18,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.List;
-
+import com.juho.webrtcexample.AppRTCClient.SignalingParameters;
+import com.juho.webrtcexample.util.AsyncHttpURLConnection;
+import com.juho.webrtcexample.util.AsyncHttpURLConnection.AsyncHttpEvents;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -48,7 +47,7 @@ public class RoomParametersFetcher {
      * Callback fired once the room's signaling parameters
      * SignalingParameters are extracted.
      */
-    void onSignalingParametersReady(final AppRTCClient.SignalingParameters params);
+    void onSignalingParametersReady(final SignalingParameters params);
 
     /**
      * Callback for room parameters extraction error.
@@ -66,7 +65,7 @@ public class RoomParametersFetcher {
   public void makeRequest() {
     Log.d(TAG, "Connecting to room: " + roomUrl);
     AsyncHttpURLConnection httpConnection =
-        new AsyncHttpURLConnection("POST", roomUrl, roomMessage, new AsyncHttpURLConnection.AsyncHttpEvents() {
+        new AsyncHttpURLConnection("POST", roomUrl, roomMessage, new AsyncHttpEvents() {
           @Override
           public void onHttpError(String errorMessage) {
             Log.e(TAG, "Room connection error: " + errorMessage);
@@ -78,7 +77,7 @@ public class RoomParametersFetcher {
             roomHttpResponseParse(response);
           }
         });
-//    httpConnection.send();
+    httpConnection.send();
   }
 
   private void roomHttpResponseParse(String response) {
@@ -148,7 +147,7 @@ public class RoomParametersFetcher {
         }
       }
 
-      AppRTCClient.SignalingParameters params = new AppRTCClient.SignalingParameters(
+      SignalingParameters params = new SignalingParameters(
           iceServers, initiator, clientId, wssUrl, wssPostUrl, offerSdp, iceCandidates);
       events.onSignalingParametersReady(params);
     } catch (JSONException e) {
@@ -160,13 +159,14 @@ public class RoomParametersFetcher {
 
   // Requests & returns a TURN ICE Server based on a request URL.  Must be run
   // off the main thread!
+  @SuppressWarnings("UseNetworkAnnotations")
   private List<PeerConnection.IceServer> requestTurnServers(String url)
       throws IOException, JSONException {
     List<PeerConnection.IceServer> turnServers = new ArrayList<>();
     Log.d(TAG, "Request TURN from: " + url);
     HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
     connection.setDoOutput(true);
-    connection.setRequestProperty("REFERER", "https://dev.roaigen.com:7061");
+    connection.setRequestProperty("REFERER", "https://appr.tc");
     connection.setConnectTimeout(TURN_HTTP_TIMEOUT_MS);
     connection.setReadTimeout(TURN_HTTP_TIMEOUT_MS);
     int responseCode = connection.getResponseCode();

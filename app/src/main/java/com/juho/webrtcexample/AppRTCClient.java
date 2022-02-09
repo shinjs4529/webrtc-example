@@ -39,17 +39,13 @@ public interface AppRTCClient {
       this(roomUrl, roomId, loopback, null /* urlParameters */);
     }
   }
-
-  boolean isSocketConnectionComplete();
-
-
   /**
    * Asynchronously connect to an AppRTC room URL using supplied connection
    * parameters. Once connection is established onConnectedToRoom()
    * callback with room parameters is invoked.
    */
   void connectToRoom(RoomConnectionParameters connectionParameters);
-  void emitJoinRoom(String roomID);
+
   /**
    * Send offer SDP to the other participant.
    */
@@ -103,7 +99,7 @@ public interface AppRTCClient {
   /**
    * Callback interface for messages delivered on signaling channel.
    *
-   * <p>Methods are guaranteed to be invoked on the UI thread of |activity|.
+   * <p>Methods are guaranteed to be invoked on the UI thread of `activity`.
    */
   interface SignalingEvents {
     /**

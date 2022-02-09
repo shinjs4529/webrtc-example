@@ -22,7 +22,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.KeyEvent;
@@ -38,9 +37,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
-
 import androidx.annotation.Nullable;
-
 import java.util.ArrayList;
 import java.util.Random;
 import org.json.JSONArray;
@@ -71,8 +68,6 @@ public class ConnectActivity extends Activity {
   private String keyprefRoomList;
   private ArrayList<String> roomList;
   private ArrayAdapter<String> adapter;
-  @Nullable
-  private AppRTCClient appRtcClient;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -217,29 +212,28 @@ public class ConnectActivity extends Activity {
       int requestCode, String[] permissions, int[] grantResults) {
     if (requestCode == PERMISSION_REQUEST) {
       String[] missingPermissions = getMissingPermissions();
-//      if (missingPermissions.length != 0) {
-//        // User didn't grant all the permissions. Warn that the application might not work
-//        // correctly.
-//        new AlertDialog.Builder(this)
-//            .setMessage(R.string.missing_permissions_try_again)
-//            .setPositiveButton(R.string.yes,
-//                (dialog, id) -> {
-//                  // User wants to try giving the permissions again.
-//                  dialog.cancel();
-//                  requestPermissions();
-//                })
-//            .setNegativeButton(R.string.no,
-//                (dialog, id) -> {
-//                  // User doesn't want to give the permissions.
-//                  dialog.cancel();
-//                  onPermissionsGranted();
-//                })
-//            .show();
-//      } else {
-//        // All permissions granted.
-//        onPermissionsGranted();
-//      }
-      onPermissionsGranted();
+      if (missingPermissions.length != 0) {
+        // User didn't grant all the permissions. Warn that the application might not work
+        // correctly.
+        new AlertDialog.Builder(this)
+            .setMessage(R.string.missing_permissions_try_again)
+            .setPositiveButton(R.string.yes,
+                (dialog, id) -> {
+                  // User wants to try giving the permissions again.
+                  dialog.cancel();
+                  requestPermissions();
+                })
+            .setNegativeButton(R.string.no,
+                (dialog, id) -> {
+                  // User doesn't want to give the permissions.
+                  dialog.cancel();
+                  onPermissionsGranted();
+                })
+            .show();
+      } else {
+        // All permissions granted.
+        onPermissionsGranted();
+      }
     }
   }
 
@@ -547,7 +541,7 @@ public class ConnectActivity extends Activity {
         CallActivity.EXTRA_PROTOCOL, R.string.pref_data_protocol_default, useValuesFromIntent);
 
     // Start AppRTCMobile activity.
-    Log.d(TAG, "for socketio, Connecting to room " + roomId + " at URL " + roomUrl);
+    Log.d(TAG, "Connecting to room " + roomId + " at URL " + roomUrl);
     if (validateUrl(roomUrl)) {
       Uri uri = Uri.parse(roomUrl);
       Intent intent = new Intent(this, CallActivity.class);

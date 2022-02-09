@@ -12,11 +12,8 @@ package com.juho.webrtcexample;
 
 import android.media.AudioFormat;
 import android.os.Environment;
-
 import android.util.Log;
-
 import androidx.annotation.Nullable;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -36,8 +33,7 @@ public class RecordedAudioToFileController implements SamplesReadyCallback {
 
   private final Object lock = new Object();
   private final ExecutorService executor;
-  @Nullable
-  private OutputStream rawAudioFileOutputStream;
+  @Nullable private OutputStream rawAudioFileOutputStream;
   private boolean isRunning;
   private long fileSizeInBytes;
 

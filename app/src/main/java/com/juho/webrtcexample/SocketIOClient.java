@@ -85,14 +85,6 @@ public class SocketIOClient implements AppRTCClient {
     // Asynchronously connect to an AppRTC room URL using supplied connection
     // parameters, retrieves room parameters and connect to WebSocket server.
     @Override
-    public boolean isSocketConnectionComplete(){
-        return false;
-    }
-    @Override
-    public void emitJoinRoom(String roomID){ // CHECK: NO USE
-    }
-
-    @Override
     public void connectToRoom(RoomConnectionParameters roomParams) {
         this.connectionParameters = roomParams;
         handler.post(new Runnable() {

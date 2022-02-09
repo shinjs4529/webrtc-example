@@ -10,11 +10,8 @@
 
 package com.juho.webrtcexample;
 
-
 import android.util.Log;
-
 import androidx.annotation.Nullable;
-
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -74,14 +71,6 @@ public class DirectRTCClient implements AppRTCClient, TCPChannelClient.TCPChanne
    * Connects to the room, roomId in connectionsParameters is required. roomId must be a valid
    * IP address matching IP_PATTERN.
    */
-  @Override
-  public boolean isSocketConnectionComplete(){
-    return false;
-  }
-  @Override
-  public void emitJoinRoom(String roomID){
-  }
-
   @Override
   public void connectToRoom(RoomConnectionParameters connectionParameters) {
     this.connectionParameters = connectionParameters;
@@ -331,7 +320,7 @@ public class DirectRTCClient implements AppRTCClient, TCPChannelClient.TCPChanne
     });
   }
 
-  // Put a |key|->|value| mapping in |json|.
+  // Put a `key`->`value` mapping in `json`.
   private static void jsonPut(JSONObject json, String key, Object value) {
     try {
       json.put(key, value);

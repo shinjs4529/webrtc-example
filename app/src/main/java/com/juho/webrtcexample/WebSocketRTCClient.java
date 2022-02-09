@@ -12,14 +12,13 @@ package com.juho.webrtcexample;
 
 import android.os.Handler;
 import android.os.HandlerThread;
-
 import android.util.Log;
-
-
 import androidx.annotation.Nullable;
-
+import com.juho.webrtcexample.RoomParametersFetcher.RoomParametersFetcherEvents;
+import com.juho.webrtcexample.WebSocketChannelClient.WebSocketChannelEvents;
+import com.juho.webrtcexample.WebSocketChannelClient.WebSocketConnectionState;
 import com.juho.webrtcexample.util.AsyncHttpURLConnection;
-
+import com.juho.webrtcexample.util.AsyncHttpURLConnection.AsyncHttpEvents;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -36,7 +35,7 @@ import org.webrtc.SessionDescription;
  * Messages to other party (with local Ice candidates and answer SDP) can
  * be sent after WebSocket connection is established.
  */
-public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelClient.WebSocketChannelEvents {
+public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelEvents {
   private static final String TAG = "WSRTCClient";
   private static final String ROOM_JOIN = "join";
   private static final String ROOM_MESSAGE = "message";
@@ -68,14 +67,6 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelClient.
   // Asynchronously connect to an AppRTC room URL using supplied connection
   // parameters, retrieves room parameters and connect to WebSocket server.
   @Override
-  public boolean isSocketConnectionComplete(){
-    return false;
-  }
-  @Override
-  public void emitJoinRoom(String roomID){
-  }
-
-  @Override
   public void connectToRoom(RoomConnectionParameters connectionParameters) {
     this.connectionParameters = connectionParameters;
     handler.post(new Runnable() {
@@ -104,7 +95,7 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelClient.
     roomState = ConnectionState.NEW;
     wsClient = new WebSocketChannelClient(handler, this);
 
-    RoomParametersFetcher.RoomParametersFetcherEvents callbacks = new RoomParametersFetcher.RoomParametersFetcherEvents() {
+    RoomParametersFetcherEvents callbacks = new RoomParametersFetcherEvents() {
       @Override
       public void onSignalingParametersReady(final SignalingParameters params) {
         WebSocketRTCClient.this.handler.post(new Runnable() {
@@ -140,7 +131,7 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelClient.
   // Helper functions to get connection, post message and leave message URLs
   private String getConnectionUrl(RoomConnectionParameters connectionParameters) {
     return connectionParameters.roomUrl + "/" + ROOM_JOIN + "/" + connectionParameters.roomId
-            + getQueryString(connectionParameters);
+        + getQueryString(connectionParameters);
   }
 
   private String getMessageUrl(
@@ -299,7 +290,7 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelClient.
   // (passed to WebSocket client constructor).
   @Override
   public void onWebSocketMessage(final String msg) {
-    if (wsClient.getState() != WebSocketChannelClient.WebSocketConnectionState.REGISTERED) {
+    if (wsClient.getState() != WebSocketConnectionState.REGISTERED) {
       Log.e(TAG, "Got WebSocket message in non registered state.");
       return;
     }
@@ -312,19 +303,13 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelClient.
         String type = json.optString("type");
         if (type.equals("candidate")) {
           events.onRemoteIceCandidate(toJavaCandidate(json));
-
-          //상대의 candidate
-
-
-//        } else if (type.equals("remove-candidates")) {
-//          JSONArray candidateArray = json.getJSONArray("candidates");
-//          IceCandidate[] candidates = new IceCandidate[candidateArray.length()];
-//          for (int i = 0; i < candidateArray.length(); ++i) {
-//            candidates[i] = toJavaCandidate(candidateArray.getJSONObject(i));
-//          }
-//          events.onRemoteIceCandidatesRemoved(candidates);
-
-
+        } else if (type.equals("remove-candidates")) {
+          JSONArray candidateArray = json.getJSONArray("candidates");
+          IceCandidate[] candidates = new IceCandidate[candidateArray.length()];
+          for (int i = 0; i < candidateArray.length(); ++i) {
+            candidates[i] = toJavaCandidate(candidateArray.getJSONObject(i));
+          }
+          events.onRemoteIceCandidatesRemoved(candidates);
         } else if (type.equals("answer")) {
           if (initiator) {
             SessionDescription sdp = new SessionDescription(
@@ -333,8 +318,6 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelClient.
           } else {
             reportError("Received answer for call initiator: " + msg);
           }
-
-
         } else if (type.equals("offer")) {
           if (!initiator) {
             SessionDescription sdp = new SessionDescription(
@@ -343,16 +326,11 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelClient.
           } else {
             reportError("Received offer for call receiver: " + msg);
           }
-
-
         } else if (type.equals("bye")) {
           events.onChannelClose();
-
-
         } else {
           reportError("Unexpected WebSocket message: " + msg);
         }
-
       } else {
         if (errorText != null && errorText.length() > 0) {
           reportError("WebSocket error message: " + errorText);
@@ -390,7 +368,7 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelClient.
     });
   }
 
-  // Put a |key|->|value| mapping in |json|.
+  // Put a `key`->`value` mapping in `json`.
   private static void jsonPut(JSONObject json, String key, Object value) {
     try {
       json.put(key, value);
@@ -408,7 +386,7 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelClient.
     }
     Log.d(TAG, "C->GAE: " + logInfo);
     AsyncHttpURLConnection httpConnection =
-        new AsyncHttpURLConnection("POST", url, message, new AsyncHttpURLConnection.AsyncHttpEvents() {
+        new AsyncHttpURLConnection("POST", url, message, new AsyncHttpEvents() {
           @Override
           public void onHttpError(String errorMessage) {
             reportError("GAE POST error: " + errorMessage);
