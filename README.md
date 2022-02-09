@@ -38,7 +38,6 @@ peerConnectionClient.getLocalDescription()가 동작해야 한다.
 SocketIOClient의 sendOfferSdp와 sendAnswerSdp를 수정하여 emit하도록 하기
 
 signalingParameters.initiator는 통화 받기 동작에서 쓰일 테니 추후에 넣어야 함
-Failed to send TURN message, error: 22 //문제없나??
 
 [Socket.io] Connected가 먼저 뜨기 때문에 myID등이 설정되지 않음
 socketio연결이 완료된 후에 CallActivity를 켜야 함

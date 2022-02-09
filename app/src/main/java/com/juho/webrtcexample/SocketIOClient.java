@@ -106,8 +106,7 @@ public class SocketIOClient implements AppRTCClient {
         roomState = ConnectionState.NEW;
 //        wsClient = new WebSocketChannelClient(handler, this);
 
-        //TODO call onSignalingParametersReady
-        signalingParametersReady();
+
 //        RoomParametersFetcher.RoomParametersFetcherEvents callbacks = new RoomParametersFetcher.RoomParametersFetcherEvents() {
 //            @Override
 //            public void onSignalingParametersReady(final SignalingParameters params) {
@@ -173,7 +172,7 @@ public class SocketIOClient implements AppRTCClient {
     // looper thread.
 //    private void signalingParametersReady(final SignalingParameters signalingParameters) {
     private void signalingParametersReady() {
-        Log.d(TAG, "Room connection completed.");
+        Log.e(TAG, "[Socketio] signalingParametersReady");
 //        if (connectionParameters.loopback
 //                && (!signalingParameters.initiator || signalingParameters.offerSdp != null)) {
 //            reportError("Loopback room is busy.");
@@ -381,8 +380,6 @@ public class SocketIOClient implements AppRTCClient {
                         e.printStackTrace();
                     }
                     System.err.println((new Date().toString())+" [Socketio] room-info: "+myID);
-                    //myID.current = payload.myID
-
                 }
             });
 
@@ -394,7 +391,6 @@ public class SocketIOClient implements AppRTCClient {
                     System.err.println((new Date().toString())+" [Socketio] payload is: "+payload);
 
                     JSONObject remoteCandidate = null;
-//                    JSONObject remoteCandidate = null;
 
                     try {
                         remoteCandidate = (JSONObject) new JSONObject(payload).get("candidate");
@@ -462,6 +458,7 @@ public class SocketIOClient implements AppRTCClient {
                     }
                     sessionID = session_id;
                     handleOfferCall(type, sdp, from);
+                    signalingParametersReady();//EEE?
                     //이쪽이 거는 통화 sdp 요청
                 }
             });
@@ -472,10 +469,8 @@ public class SocketIOClient implements AppRTCClient {
                     String otherUser = args[0].toString();
                     otherUserID = otherUser;
                     System.err.println((new Date().toString())+" [Socketio] other-user: "+otherUserID);
-                    //otherUser.current = userID;
                     callUser(otherUserID);
                     //상대방에게 condidate먼저 보내기
-                    //callUser();//otherUserID공유하니 인수 필요없을지도..?
                 }
             });
             mSocket.on("user-disconnected", new Emitter.Listener() {
@@ -499,19 +494,6 @@ public class SocketIOClient implements AppRTCClient {
 
 
             mSocket.connect();
-
-//            System.err.println("[Socketio] roomNumber: "+roomNumber);
-//            String roomID = roomNumber;
-//            String contact = "13131313";//caller(robotID), //현재 주소에서 &contact=?을 가져옴
-//            String timestamp = "2022-01-27T01:59:08.077Z";
-//
-//            JSONObject json = new JSONObject();
-//            jsonPut(json, "roomID", roomID);
-//            jsonPut(json, "contact", contact);
-//            jsonPut(json, "timestamp", timestamp);
-//
-//            System.err.println((new Date().toString())+" [Socketio] emitting join-room: "+json.toString());
-//            emit("join-room", json);
 
             //로그 보려면 서버컴 docker로 보기
             Log.d("SOCKET", "Connection success : " + mSocket.id());
@@ -545,33 +527,12 @@ public class SocketIOClient implements AppRTCClient {
     }
 
     public void createPeer(String targetUser){
-        //const payload = {
-        //                    to: otherUser.current,
-        //                    from: myID.current,
-        //                    candidate: e.candidate,
-        //                    session_id: sessionID.current,
-        //                }
 
         // TODO get my candidates, from PeerConnectionClient class?
-//        String candidate = "my candidate";
-//
-//        JSONObject json = new JSONObject();
-//        jsonPut(json, "to", targetUser);
-//        jsonPut(json, "from", myID);
-//        jsonPut(json, "candidate", candidate);
-//        jsonPut(json, "session_id", sessionID);
-//
-//        emit("ice-candidate", json);
-
         handleNegotiationNeededEvent(targetUser);
     }
 
     public void handleNegotiationNeededEvent(String targetUser){
-//        to: userID,
-//        from: socketRef.current.id,
-//        description: peerRef.current.localDescription,
-//        session_id: sessionID.current,
-//        media: 'video'
 
         sessionID = myID+"-"+targetUser;
 
@@ -581,7 +542,7 @@ public class SocketIOClient implements AppRTCClient {
 
     public void handleOfferCall(String type, String sdp, String from){
         //TODO offer가 맞을거 같은데 have-local-offer 오류가 나서 일단 answer로 수정
-        type = "answer";
+//        type = "answer";
 
         System.err.println("[Socketio] handleOfferCall type: "+type);
         System.err.println("[Socketio] handleOfferCall from: "+from);

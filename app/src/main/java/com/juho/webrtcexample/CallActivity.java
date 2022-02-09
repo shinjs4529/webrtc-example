@@ -784,24 +784,25 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
 //        e.printStackTrace();
 //      }
 //    }
-    System.err.println("for socketio, peerConnectionClient is NOT null");
 
 //    String sdpLocal = String.valueOf(peerConnectionClient.getLocalDescription());
 ////      String sdpRemote = String.valueOf(peerConnectionClient.getRemoteDescription());
 //    System.err.println("for socketio, at CallActivity.onCreate getLocalDescription() is: "+sdpLocal.substring(0,50));
 
 //    if (signalingParameters.initiator) {
+    if (false) {
       logAndToast("Creating OFFER...");
       // Create offer. Offer SDP will be sent to answering client in
       // PeerConnectionEvents.onLocalDescription event.
       peerConnectionClient.createOffer();
-//    } else {
+    } else {
+      System.err.println("for socketio, onConnectedToRoomInternal !initiator");
 //      if (params.offerSdp != null) {
 //        peerConnectionClient.setRemoteDescription(params.offerSdp);
 //        logAndToast("Creating ANSWER...");
 //        // Create answer. Answer SDP will be sent to offering client in
 //        // PeerConnectionEvents.onLocalDescription event.
-//        peerConnectionClient.createAnswer();
+        peerConnectionClient.createAnswer();
 //      }
 //      if (params.iceCandidates != null) {
 //        // Add remote ICE candidates from room.
@@ -809,7 +810,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
 //          peerConnectionClient.addRemoteIceCandidate(iceCandidate);
 //        }
 //      }
-//    }
+    }
   }
 
   @Override
