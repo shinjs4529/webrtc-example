@@ -78,6 +78,9 @@ public class DirectRTCClient implements AppRTCClient, TCPChannelClient.TCPChanne
   public boolean isSocketConnectionComplete(){
     return false;
   }
+  @Override
+  public void emitJoinRoom(String roomID){
+  }
 
   @Override
   public void connectToRoom(RoomConnectionParameters connectionParameters) {

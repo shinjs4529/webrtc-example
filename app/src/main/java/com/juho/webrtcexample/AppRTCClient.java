@@ -42,13 +42,14 @@ public interface AppRTCClient {
 
   boolean isSocketConnectionComplete();
 
+
   /**
    * Asynchronously connect to an AppRTC room URL using supplied connection
    * parameters. Once connection is established onConnectedToRoom()
    * callback with room parameters is invoked.
    */
   void connectToRoom(RoomConnectionParameters connectionParameters);
-
+  void emitJoinRoom(String roomID);
   /**
    * Send offer SDP to the other participant.
    */

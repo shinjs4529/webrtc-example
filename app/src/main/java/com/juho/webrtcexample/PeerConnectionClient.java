@@ -934,13 +934,11 @@ public class PeerConnectionClient {
   public void setRemoteDescription(final SessionDescription desc) {
     System.err.println("for socketio, in setRemoteDescription()");
     executor.execute(() -> {
-      System.err.println("for socketio, in setRemoteDescription() 1");
       if (peerConnection == null || isError) {
-        System.err.println("for socketio, in setRemoteDescription() peerConnection is not null!!");//peerConnection is null
         return;
       }
-      System.err.println("for socketio, in setRemoteDescription() 3");
       String sdp = desc.description;
+      System.err.println("for socketio, in setRemoteDescription() sdp is: "+sdp);
       if (preferIsac) {
         sdp = preferCodec(sdp, AUDIO_CODEC_ISAC, true);
       }

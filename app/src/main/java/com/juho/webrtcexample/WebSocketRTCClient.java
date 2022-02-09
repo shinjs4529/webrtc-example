@@ -71,6 +71,9 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelClient.
   public boolean isSocketConnectionComplete(){
     return false;
   }
+  @Override
+  public void emitJoinRoom(String roomID){
+  }
 
   @Override
   public void connectToRoom(RoomConnectionParameters connectionParameters) {

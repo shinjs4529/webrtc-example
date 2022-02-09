@@ -289,7 +289,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       finish();
       return;
     }
-    appRtcClient = new SocketIOClient(this, roomId);
+    appRtcClient = new SocketIOClient(this);
     while(!appRtcClient.isSocketConnectionComplete()){
       System.err.println("SocketIOClient is not Connected yet...");
       try {
@@ -299,6 +299,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       }
     }
     System.err.println("SocketIOClient is Connected!");
+    appRtcClient.emitJoinRoom(roomId);
 
     boolean loopback = intent.getBooleanExtra(EXTRA_LOOPBACK, false);
     boolean tracing = intent.getBooleanExtra(EXTRA_TRACING, false);

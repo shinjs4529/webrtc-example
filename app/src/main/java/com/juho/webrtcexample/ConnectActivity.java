@@ -71,6 +71,8 @@ public class ConnectActivity extends Activity {
   private String keyprefRoomList;
   private ArrayList<String> roomList;
   private ArrayAdapter<String> adapter;
+  @Nullable
+  private AppRTCClient appRtcClient;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {

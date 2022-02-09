@@ -24,12 +24,12 @@ import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 
-public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
+public class SocketIOClient implements AppRTCClient {
 
     private static final String TAG = "SocketIOClient";
 
     private Socket mSocket;
-    private String roomNumber="1506";
+    private String roomNumber="1111";
 //    private final String serverUrl = "https://dev.roaigen.com:7061";
     private final String serverUrl = "https://mybom-dev.herokuapp.com";
     private String myID = "default myID";
@@ -57,16 +57,16 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
     private String messageUrl;
     private String leaveUrl;
 
-    public SocketIOClient(SignalingEvents events, String roomID) {
+    public SocketIOClient(SignalingEvents events) {
         this.events = events;
         roomState = ConnectionState.NEW;
         final HandlerThread handlerThread = new HandlerThread(TAG);
         handlerThread.start();
         handler = new Handler(handlerThread.getLooper());
 
-        roomNumber = roomID;
         init();
     }
+
     //--------------------------
     @Override
     public boolean isSocketConnectionComplete(){
@@ -346,20 +346,6 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
 
     // --------------------------------------------------------------------
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_socketio);
-
-//        Intent intent = getIntent();
-//        roomNumber = intent.getStringExtra("roomNumber");
-
-        //실제 주소의 형식:
-        // https://dev.roaigen.com:7061/room/b6927dd0?
-        // t=2022-01-27T01:59:08.077Z&contact=13131313
-//        init();//통화방에 입장할 때 해당 액티비티 및 메소드 실행
-    }
-
     private void init() {
         try {
             System.out.println("[Socketio] Connecting to server: "+serverUrl);
@@ -370,6 +356,7 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
                 @Override
                 public void call(Object... args) {
                     System.out.println((new Date().toString())+" [Socketio] Connected");
+                    connectionFlag = true;
                 }
             });
 
@@ -489,8 +476,6 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
                     callUser(otherUserID);
                     //상대방에게 condidate먼저 보내기
                     //callUser();//otherUserID공유하니 인수 필요없을지도..?
-                    //TODO connection이 완료되면 CallActivity의 동작이 이어지도록 해야함1
-                    connectionFlag = true;
                 }
             });
             mSocket.on("user-disconnected", new Emitter.Listener() {
@@ -509,36 +494,44 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
                     //otherUser.current = userID
                     otherUserID = takerID;
                     System.err.println((new Date().toString())+" [Socketio] user-joined: "+otherUserID);
-                    //TODO connection이 완료되면 CallActivity의 동작이 이어지도록 해야함1
-                    connectionFlag = true;
                 }
             });
 
 
             mSocket.connect();
-//            String connectionUrl = getConnectionUrl(connectionParameters);
-//            String roomID = this.connectionParameters.roomId;
-            System.err.println("[Socketio] roomNumber: "+roomNumber);
-            String roomID = roomNumber;
-            String contact = "13131313";//caller(robotID), //현재 주소에서 &contact=?을 가져옴
-            String timestamp = "2022-01-27T01:59:08.077Z";
 
-            JSONObject json = new JSONObject();
-            jsonPut(json, "roomID", roomID);
-            jsonPut(json, "contact", contact);
-            jsonPut(json, "timestamp", timestamp);
+//            System.err.println("[Socketio] roomNumber: "+roomNumber);
+//            String roomID = roomNumber;
+//            String contact = "13131313";//caller(robotID), //현재 주소에서 &contact=?을 가져옴
+//            String timestamp = "2022-01-27T01:59:08.077Z";
+//
+//            JSONObject json = new JSONObject();
+//            jsonPut(json, "roomID", roomID);
+//            jsonPut(json, "contact", contact);
+//            jsonPut(json, "timestamp", timestamp);
+//
+//            System.err.println((new Date().toString())+" [Socketio] emitting join-room: "+json.toString());
+//            emit("join-room", json);
 
-            System.err.println((new Date().toString())+" [Socketio] emitting join-room: "+json.toString());
-            emit("join-room", json);
             //로그 보려면 서버컴 docker로 보기
             Log.d("SOCKET", "Connection success : " + mSocket.id());
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
+    }
+    @Override
+    public void emitJoinRoom(String roomID){
+        System.err.println("[Socketio] roomID: "+roomID);
+        String contact = "13131313";//TODO caller(robotID) 현재는 기본값, //현재 주소에서 &contact=?을 가져오거나 plan에서 받기
+        String timestamp = "2022-01-27T01:59:08.077Z";
 
-//        Intent intent = getIntent();
-//        username = intent.getStringExtra("username");
-//        roomNumber = intent.getStringExtra("roomNumber");
+        JSONObject json = new JSONObject();
+        jsonPut(json, "roomID", roomID);
+        jsonPut(json, "contact", contact);
+        jsonPut(json, "timestamp", timestamp);
+
+        System.err.println((new Date().toString())+" [Socketio] emitting join-room: "+json.toString());
+        emit("join-room", json);
     }
 
     public void emit(String eventName, Object message) {
@@ -618,101 +611,6 @@ public class SocketIOClient extends AppCompatActivity implements AppRTCClient {
     public void handleNewICECandidateMsg(JSONObject remoteCandidate) throws JSONException {
         events.onRemoteIceCandidate(toJavaCandidate(remoteCandidate));
     }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        mSocket.disconnect();
-    }
-
-//    public void connectToRoom(){
-//        // Get default codecs.
-//        String videoCodec = sharedPrefGetString(R.string.pref_videocodec_key,
-//                CallActivity.EXTRA_VIDEOCODEC, R.string.pref_videocodec_default, useValuesFromIntent);
-//        String audioCodec = sharedPrefGetString(R.string.pref_audiocodec_key,
-//                CallActivity.EXTRA_AUDIOCODEC, R.string.pref_audiocodec_default, useValuesFromIntent);
-//
-//        // Check HW codec flag.
-//        boolean hwCodec = sharedPrefGetBoolean(R.string.pref_hwcodec_key,
-//                CallActivity.EXTRA_HWCODEC_ENABLED, R.string.pref_hwcodec_default, useValuesFromIntent);
-//
-//        // Check Capture to texture.
-//        boolean captureToTexture = sharedPrefGetBoolean(R.string.pref_capturetotexture_key,
-//                CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, R.string.pref_capturetotexture_default,
-//                useValuesFromIntent);
-//
-//        // Get video resolution from settings.
-//        int videoWidth = 0;
-//        int videoHeight = 0;
-//        if (useValuesFromIntent) {
-//            videoWidth = getIntent().getIntExtra(CallActivity.EXTRA_VIDEO_WIDTH, 0);
-//            videoHeight = getIntent().getIntExtra(CallActivity.EXTRA_VIDEO_HEIGHT, 0);
-//        }
-//        if (videoWidth == 0 && videoHeight == 0) {
-//            String resolution =
-//                    sharedPref.getString(keyprefResolution, getString(R.string.pref_resolution_default));
-//            String[] dimensions = resolution.split("[ x]+");
-//            if (dimensions.length == 2) {
-//                try {
-//                    videoWidth = Integer.parseInt(dimensions[0]);
-//                    videoHeight = Integer.parseInt(dimensions[1]);
-//                } catch (NumberFormatException e) {
-//                    videoWidth = 0;
-//                    videoHeight = 0;
-//                    Log.e(TAG, "Wrong video resolution setting: " + resolution);
-//                }
-//            }
-//        }
-//
-//        // Get camera fps from settings.
-//        int cameraFps = 0;
-//        if (useValuesFromIntent) {
-//            cameraFps = getIntent().getIntExtra(CallActivity.EXTRA_VIDEO_FPS, 0);
-//        }
-//        if (cameraFps == 0) {
-//            String fps = sharedPref.getString(keyprefFps, getString(R.string.pref_fps_default));
-//            String[] fpsValues = fps.split("[ x]+");
-//            if (fpsValues.length == 2) {
-//                try {
-//                    cameraFps = Integer.parseInt(fpsValues[0]);
-//                } catch (NumberFormatException e) {
-//                    cameraFps = 0;
-//                    Log.e(TAG, "Wrong camera fps setting: " + fps);
-//                }
-//            }
-//        }
-//
-//        // Get video and audio start bitrate.
-//        int videoStartBitrate = 0;
-////        if (useValuesFromIntent) {
-////            videoStartBitrate = getIntent().getIntExtra(CallActivity.EXTRA_VIDEO_BITRATE, 0);
-////        }
-////        if (videoStartBitrate == 0) {
-//            String bitrateTypeDefault = getString(R.string.pref_maxvideobitrate_default);
-//            String bitrateType = sharedPref.getString(keyprefVideoBitrateType, bitrateTypeDefault);
-//            if (!bitrateType.equals(bitrateTypeDefault)) {
-//                String bitrateValue = sharedPref.getString(
-//                        keyprefVideoBitrateValue, getString(R.string.pref_maxvideobitratevalue_default));
-//                videoStartBitrate = Integer.parseInt(bitrateValue);
-//            }
-////        }
-//
-//        int audioStartBitrate = 0;
-////        if (useValuesFromIntent) {
-////            audioStartBitrate = getIntent().getIntExtra(CallActivity.EXTRA_AUDIO_BITRATE, 0);
-////        }
-////        if (audioStartBitrate == 0) {
-//            String bitrateTypeDefault = getString(R.string.pref_startaudiobitrate_default);
-//            String bitrateType = sharedPref.getString(keyprefAudioBitrateType, bitrateTypeDefault);
-//            if (!bitrateType.equals(bitrateTypeDefault)) {
-//                String bitrateValue = sharedPref.getString(
-//                        keyprefAudioBitrateValue, getString(R.string.pref_startaudiobitratevalue_default));
-//                audioStartBitrate = Integer.parseInt(bitrateValue);
-//            }
-////        }
-//
-//
-//    }
 
     private void reportError(final String errorMessage) {
         Log.e(TAG, errorMessage);
