@@ -822,8 +822,11 @@ public class PeerConnectionClient {
     executor.execute(() -> {
       if (peerConnection != null && !isError) {
         if (queuedRemoteCandidates != null) {
-          queuedRemoteCandidates.add(candidate);
+          Log.w(TAG, "for socketio, addRemoteIceCandidate - queuedRemoteCandidates");
+          Log.w(TAG, "for socketio, addRemoteIceCandidate - queuedRemoteCandidates.size() is: "+queuedRemoteCandidates.size());
+            queuedRemoteCandidates.add(candidate);
         } else {
+          Log.w(TAG, "for socketio, addRemoteIceCandidate - peerConnection");
           peerConnection.addIceCandidate(candidate);
         }
       }
@@ -1145,6 +1148,7 @@ public class PeerConnectionClient {
   }
 
   private void drainCandidates() {
+    Log.w(TAG, "for socketio, drainCandidates");
     if (queuedRemoteCandidates != null) {
       Log.d(TAG, "Add " + queuedRemoteCandidates.size() + " remote candidates");
       for (IceCandidate candidate : queuedRemoteCandidates) {
@@ -1302,6 +1306,7 @@ public class PeerConnectionClient {
   private class SDPObserver implements SdpObserver {
     @Override
     public void onCreateSuccess(final SessionDescription desc) {
+      Log.e(TAG, "for socketio, onCreateSuccess");
       if (localDescription != null) {
         reportError("Multiple SDP create.");
         return;
@@ -1326,6 +1331,7 @@ public class PeerConnectionClient {
     @Override
     public void onSetSuccess() {
       executor.execute(() -> {
+        Log.e(TAG, "for socketio, onSetSuccess");
         if (peerConnection == null || isError) {
           return;
         }
@@ -1349,9 +1355,11 @@ public class PeerConnectionClient {
             // We've just set our local SDP so time to send it, drain
             // remote and send local ICE candidates.
             Log.d(TAG, "Local SDP set succesfully");
+            Log.w(TAG, "for socketio, onSetSuccess - else if");
             events.onLocalDescription(localDescription);
             drainCandidates();
           } else {
+            Log.w(TAG, "for socketio, onSetSuccess - else else");
             // We've just set remote SDP - do nothing for now -
             // answer will be created soon.
             Log.d(TAG, "Remote SDP set succesfully");

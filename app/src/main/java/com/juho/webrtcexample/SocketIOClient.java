@@ -43,6 +43,7 @@ import io.socket.client.Socket;
 public class SocketIOClient implements AppRTCClient {
 
     private static final String TAG = "SocketIOClient";
+    private int tempIntForCandidateSendLimit = 0;
 
     private enum ConnectionState { NEW, CONNECTED, CLOSED, ERROR }
 
@@ -123,7 +124,7 @@ public class SocketIOClient implements AppRTCClient {
                 jsonPut(json, "roomID", connectionParameters.roomId);
                 jsonPut(json, "contact", _contact);
 
-                _client.emit("join-room", json);
+                emit("join-room", json);
 
             });
             _client.on(Socket.EVENT_DISCONNECT, (args) -> {
@@ -208,7 +209,7 @@ public class SocketIOClient implements AppRTCClient {
                     }
                     IceCandidate candidate = new IceCandidate(
                             candidateJSON.getString("sdpMid"), candidateJSON.getInt("sdpMLineIndex"), sdp);
-                    events.onRemoteIceCandidate(candidate);
+                    events.onRemoteIceCandidate(candidate);//E
                 } catch (Exception e) {
                     reportError("ice-candidate : " + e);
                 }
@@ -259,7 +260,7 @@ public class SocketIOClient implements AppRTCClient {
                 jsonPut(json, "session_id", signalingSession.sessionID);
                 jsonPut(json, "media", "video");
 
-                _client.emit("offer", json);
+                emit("offer", json);
             }
         });
     }
@@ -280,7 +281,7 @@ public class SocketIOClient implements AppRTCClient {
                 jsonPut(json, "description", descJson);
                 jsonPut(json, "session_id", signalingSession.sessionID);
 
-                _client.emit("answer", json);
+                emit("answer", json);
             }
         });
     }
@@ -301,7 +302,8 @@ public class SocketIOClient implements AppRTCClient {
                 jsonPut(json, "from", _selfID);
                 jsonPut(json, "candidate", candidateJson);
                 jsonPut(json, "session_id", signalingSession.sessionID);
-                _client.emit("ice-candidate", json);
+
+                emit("ice-candidate", json);
             }
         });
     }
@@ -333,6 +335,11 @@ public class SocketIOClient implements AppRTCClient {
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public void emit(String eventName, Object message) {
+        Log.e(TAG, "for socketio, emitting: "+eventName);
+        _client.emit(eventName, message);
     }
     //endregion Helper functions
 }

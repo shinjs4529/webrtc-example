@@ -215,21 +215,21 @@ public class ConnectActivity extends Activity {
       if (missingPermissions.length != 0) {
         // User didn't grant all the permissions. Warn that the application might not work
         // correctly.
-        new AlertDialog.Builder(this)
-            .setMessage(R.string.missing_permissions_try_again)
-            .setPositiveButton(R.string.yes,
-                (dialog, id) -> {
-                  // User wants to try giving the permissions again.
-                  dialog.cancel();
-                  requestPermissions();
-                })
-            .setNegativeButton(R.string.no,
-                (dialog, id) -> {
-                  // User doesn't want to give the permissions.
-                  dialog.cancel();
-                  onPermissionsGranted();
-                })
-            .show();
+//        new AlertDialog.Builder(this)
+//            .setMessage(R.string.missing_permissions_try_again)
+//            .setPositiveButton(R.string.yes,
+//                (dialog, id) -> {
+//                  // User wants to try giving the permissions again.
+//                  dialog.cancel();
+//                  requestPermissions();
+//                })
+//            .setNegativeButton(R.string.no,
+//                (dialog, id) -> {
+//                  // User doesn't want to give the permissions.
+//                  dialog.cancel();
+//                  onPermissionsGranted();
+//                })
+//            .show();
       } else {
         // All permissions granted.
         onPermissionsGranted();

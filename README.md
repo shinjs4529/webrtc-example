@@ -98,27 +98,78 @@ E/turn_port.cc: (line 369): Failed to create TURN client socket
 ->'answer' emit
 
 ----------------------------
-#caller-side
+#as caller //EEE
 
-0. user-joined
+0. user-joined -> onConnectedToRoom -> createPeerConnectionInternal -> ??
 1. offer
-2. ice-candidate*N
-setup iceServer
+#SocketIOClient
+events.onRemoteDescription(sdp)
+#CallActivity
+-onRemoteDescription
+#PeerConnectionClient
+peerConnectionClient.setRemoteDescription(desc);---1
+->onSetSuccess -> else else ->완료
+peerConnectionClient.createAnswer();---2
+->onCreateSuccess -> peerConnection.setLocalDescription
+->onSetSuccess -> else if -> events.onLocalDescription
+#CallActivity
+-onLocalDescription
+appRtcClient.sendAnswerSdp(desc);
+
+@->
+->handleOfferCall()
+->goto @1@
+->createAnswer() ck
+->setLocalDescription() as setRemoteDescription ck?
+->6개 candidate 다 받으면
+->onSetSuccess
+->events.onLocalDescription(localDescription), -> drainCandidates()
+->onLocalDescription
+->appRtcClient.sendAnswerSdp(desc)
+->@
+->emit("answer") 
+
+2. ice-candidate*N //key
+take iceServer
 drainCandidates()
 emit answer
+
+@1@
+->createPeer() //이에 해당하는거 찾아야함 @2@?
+->peer.onicecandidate //받은 ice-candidate로 설정이 완료되면?, 그게 onIceCandidate?
+->emit("ice-candidate")
+->@
+
+#PeerConnectionClient
+=PCObserver
+-onIceCandidate //EEE그냥 candidate 추가되는대로 아래가 실행됨
+?????->queuedRemoteCandidates로 해결?
+events.onIceCandidate(candidate)
+#CallActivity
+-onIceCandidate
+appRtcClient.sendLocalIceCandidate
+#SocketIOClient
+-sendLocalIceCandidate
 emit ice-candidate*N //EEEEE
 3. ice-candidate*1 //EEEEE
 
-#sdp, a=setup:actpass설정
-offerer - actpass
-answerer - active/passive
--------------------------------
-E/jsep_transport_controller.cc: (line 652): Failed to apply the description for m= section with mid='0': Offerer must use actpass value for setup attribute. (INVALID_PARAMETER)
-E/peer_connection.cc: (line 3097): Failed to set remote answer sdp: Failed to apply the description for m= section with mid='0': Offerer must use actpass value for setup attribute.
-E/PCRTCClient: Peerconnection error: setSDP error: Failed to set remote answer sdp: Failed to apply the description for m= section with mid='0': Offerer must use actpass value for setup attribute.
+#as taker
+0. other-user
+emit offer
+emit ice-candidate*3
+1. answer
+
+->callUser(userID) ck? onConnectedToRoomInternal
+->createPeer(userID) ck? createPeerConnection()
+->peer.onicecandidate 
+->emit("ice-candidate")
+->@
+2. ice-candidate
+//emit ice-candidate*3
+(완료)
 
 ##
-CallActivity, SocketIOClient, PeerConnectionClient 등 3개 클래스
+If UDP is blocked, a TURN server won't help you.
 
 
 

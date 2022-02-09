@@ -756,6 +756,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
         localProxyVideoSink, remoteSinks, videoCapturer, signalingParameters);
 
     if (signalingParameters.initiator) {
+      Log.w(TAG, "for socketio, onConnectedToRoomInternal - Creating OFFER");
       logAndToast("Creating OFFER...");
       // Create offer. Offer SDP will be sent to answering client in
       // PeerConnectionEvents.onLocalDescription event.
@@ -801,6 +802,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
         peerConnectionClient.setRemoteDescription(desc);
         if (!signalingParameters.initiator) {
           logAndToast("Creating ANSWER...");
+          Log.w(TAG, "for socketio, onRemoteDescription - Creating ANSWER");
           // Create answer. Answer SDP will be sent to offering client in
           // PeerConnectionEvents.onLocalDescription event.
           peerConnectionClient.createAnswer();
