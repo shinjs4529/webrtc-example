@@ -123,7 +123,7 @@ public class SocketIOClient implements AppRTCClient {
                 jsonPut(json, "roomID", connectionParameters.roomId);
                 jsonPut(json, "contact", _contact);
 
-                _client.emit("join-room", json);
+                send("join-room", json);
 
             });
             _client.on(Socket.EVENT_DISCONNECT, (args) -> {
@@ -259,7 +259,7 @@ public class SocketIOClient implements AppRTCClient {
                 jsonPut(json, "session_id", signalingSession.sessionID);
                 jsonPut(json, "media", "video");
 
-                _client.emit("offer", json);
+                send("offer", json);
             }
         });
     }
@@ -280,7 +280,7 @@ public class SocketIOClient implements AppRTCClient {
                 jsonPut(json, "description", descJson);
                 jsonPut(json, "session_id", signalingSession.sessionID);
 
-                _client.emit("answer", json);
+                send("answer", json);
             }
         });
     }
@@ -301,7 +301,7 @@ public class SocketIOClient implements AppRTCClient {
                 jsonPut(json, "from", _selfID);
                 jsonPut(json, "candidate", candidateJson);
                 jsonPut(json, "session_id", signalingSession.sessionID);
-                _client.emit("ice-candidate", json);
+                send("ice-candidate", json);
             }
         });
     }
@@ -313,6 +313,15 @@ public class SocketIOClient implements AppRTCClient {
     }
 
     //region: Helper functions
+    private void send(String eventType, Object payload) {
+        Log.e(TAG, "Send - [" + eventType + "]" + payload.toString());
+        try {
+            _client.emit(eventType, payload);
+        } catch (Exception e) {
+            Log.e(TAG, "Send err " + e);
+        }
+    }
+
     private void reportError(final String errorMessage) {
         Log.e(TAG, "reportError : " + errorMessage);
         handler.post(new Runnable() {
