@@ -314,7 +314,7 @@ public class SocketIOClient implements AppRTCClient {
 
     //region: Helper functions
     private void send(String eventType, Object payload) {
-        Log.e(TAG, "Send - [" + eventType + "]" + payload.toString());
+        Log.d(TAG, "Send - [" + eventType + "]" + payload.toString());
         try {
             _client.emit(eventType, payload);
         } catch (Exception e) {
