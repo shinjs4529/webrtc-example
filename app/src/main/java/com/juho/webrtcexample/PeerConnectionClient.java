@@ -595,8 +595,7 @@ public class PeerConnectionClient {
     PeerConnection.RTCConfiguration rtcConfig =
         new PeerConnection.RTCConfiguration(signalingParameters.iceServers);
     // TCP candidates are only useful when connecting to a server that supports
-    // ICE-TCP.
-    rtcConfig.tcpCandidatePolicy = PeerConnection.TcpCandidatePolicy.DISABLED;
+//    rtcConfig.tcpCandidatePolicy = PeerConnection.TcpCandidatePolicy.DISABLED;
     rtcConfig.bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE;
     rtcConfig.rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE;
     rtcConfig.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
@@ -609,6 +608,7 @@ public class PeerConnectionClient {
     peerConnection = factory.createPeerConnection(rtcConfig, pcObserver);
 
     if (dataChannelEnabled) {
+      Log.d(TAG, "DataChannel Enabled");
       DataChannel.Init init = new DataChannel.Init();
       init.ordered = peerConnectionParameters.dataChannelParameters.ordered;
       init.negotiated = peerConnectionParameters.dataChannelParameters.negotiated;

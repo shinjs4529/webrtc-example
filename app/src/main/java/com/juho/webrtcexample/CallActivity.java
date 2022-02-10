@@ -747,7 +747,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     final long delta = System.currentTimeMillis() - callStartedTimeMs;
 
     signalingParameters = params;
-    logAndToast("Creating peer connection, delay=" + delta + "ms");
+    logAndToast("onConnectedToRoomInternal - Creating peer connection, delay=" + delta + "ms");
     VideoCapturer videoCapturer = null;
     if (peerConnectionParameters.videoCallEnabled) {
       videoCapturer = createVideoCapturer();
@@ -761,9 +761,9 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       // PeerConnectionEvents.onLocalDescription event.
       peerConnectionClient.createOffer();
     } else {
-      if (params.offerSdp != null) {
+      if (params.offerSdp != null && !(appRtcClient instanceof SocketIOClient)) {
         peerConnectionClient.setRemoteDescription(params.offerSdp);
-        logAndToast("Creating ANSWER... with " + params.offerSdp);
+        logAndToast("onConnectedToRoomInternal - Creating ANSWER... with " + params.offerSdp);
         // Create answer. Answer SDP will be sent to offering client in
         // PeerConnectionEvents.onLocalDescription event.
         peerConnectionClient.createAnswer();
@@ -771,6 +771,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       if (params.iceCandidates != null) {
         // Add remote ICE candidates from room.
         for (IceCandidate iceCandidate : params.iceCandidates) {
+          Log.d(TAG, "onConnectedToRoomInternal - addRemoteIceCandidate : " + iceCandidate);
           peerConnectionClient.addRemoteIceCandidate(iceCandidate);
         }
       }
