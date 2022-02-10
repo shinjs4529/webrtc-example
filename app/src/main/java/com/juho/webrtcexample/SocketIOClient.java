@@ -293,7 +293,7 @@ public class SocketIOClient implements AppRTCClient {
             public void run() {
                 JSONObject candidateJson = new JSONObject();
                 jsonPut(candidateJson, "sdpMLineIndex", candidate.sdpMLineIndex);
-                jsonPut(candidateJson, "sdpMid", candidate.sdpMLineIndex);
+                jsonPut(candidateJson, "sdpMid", candidate.sdpMid);
                 jsonPut(candidateJson, "candidate", candidate.sdp);
 
                 JSONObject json = new JSONObject();
