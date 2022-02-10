@@ -38,7 +38,7 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 
     // Web RTC
-    implementation 'org.webrtc:google-webrtc:1.0.32006'
+    implementation 'com.github.webrtc-sdk:android:93.4577.01'
     implementation files('libs/autobanh.jar')
 
     implementation('io.socket:socket.io-client:2.0.1') {
