@@ -46,8 +46,6 @@ public class SocketIOClient implements AppRTCClient {
 
     private enum ConnectionState { NEW, CONNECTED, CLOSED, ERROR }
 
-    // TODO: Remove handler if socket.io api is async
-    private final Handler handler;
     private SignalingEvents events;
     private Socket _client;
     private ConnectionState roomState;
@@ -75,9 +73,6 @@ public class SocketIOClient implements AppRTCClient {
     public SocketIOClient(SignalingEvents events) {
         this.events = events;
         roomState = ConnectionState.NEW;
-        final HandlerThread handlerThread = new HandlerThread(TAG);
-        handlerThread.start();
-        handler = new Handler(handlerThread.getLooper());
     }
 
     // --------------------------------------------------------------------
@@ -87,23 +82,12 @@ public class SocketIOClient implements AppRTCClient {
     @Override
     public void connectToRoom(RoomConnectionParameters roomParams) {
         this.connectionParameters = roomParams;
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                connectToRoomInternal();
-            }
-        });
+        connectToRoomInternal();
     }
 
     @Override
     public void disconnectFromRoom() {
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                disconnectFromRoomInternal();
-                handler.getLooper().quit();
-            }
-        });
+        disconnectFromRoomInternal();
     }
 
     // Connects to room - function runs on a local looper thread.
@@ -240,70 +224,55 @@ public class SocketIOClient implements AppRTCClient {
     // Send local offer SDP to the other participant.
     @Override
     public void sendOfferSdp(final SessionDescription sdp) {
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (roomState != ConnectionState.CONNECTED) {
-                    reportError("Sending offer SDP in non connected state.");
-                    return;
-                }
+        if (roomState != ConnectionState.CONNECTED) {
+            reportError("Sending offer SDP in non connected state.");
+            return;
+        }
 
-                JSONObject descJson = new JSONObject();
-                jsonPut(descJson, "sdp", sdp.description);
-                jsonPut(descJson, "type", "offer");
+        JSONObject descJson = new JSONObject();
+        jsonPut(descJson, "sdp", sdp.description);
+        jsonPut(descJson, "type", "offer");
 
-                JSONObject json = new JSONObject();
-                jsonPut(json, "to", signalingSession.clientId);
-                jsonPut(json, "from", _selfID);
-                jsonPut(json, "description", descJson);
-                jsonPut(json, "session_id", signalingSession.sessionID);
-                jsonPut(json, "media", "video");
+        JSONObject json = new JSONObject();
+        jsonPut(json, "to", signalingSession.clientId);
+        jsonPut(json, "from", _selfID);
+        jsonPut(json, "description", descJson);
+        jsonPut(json, "session_id", signalingSession.sessionID);
+        jsonPut(json, "media", "video");
 
-                send("offer", json);
-            }
-        });
+        send("offer", json);
     }
 
     // Send local answer SDP to the other participant.
     @Override
     public void sendAnswerSdp(final SessionDescription sdp) {
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                JSONObject descJson = new JSONObject();
-                jsonPut(descJson, "sdp", sdp.description);
-                jsonPut(descJson, "type", "offer");
+        JSONObject descJson = new JSONObject();
+        jsonPut(descJson, "sdp", sdp.description);
+        jsonPut(descJson, "type", "offer");
 
-                JSONObject json = new JSONObject();
-                jsonPut(json, "to", signalingSession.clientId);
-                jsonPut(json, "from", _selfID);
-                jsonPut(json, "description", descJson);
-                jsonPut(json, "session_id", signalingSession.sessionID);
+        JSONObject json = new JSONObject();
+        jsonPut(json, "to", signalingSession.clientId);
+        jsonPut(json, "from", _selfID);
+        jsonPut(json, "description", descJson);
+        jsonPut(json, "session_id", signalingSession.sessionID);
 
-                send("answer", json);
-            }
-        });
+        send("answer", json);
     }
 
     // Send Ice candidate to the other participant.
     @Override
     public void sendLocalIceCandidate(final IceCandidate candidate) {
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                JSONObject candidateJson = new JSONObject();
-                jsonPut(candidateJson, "sdpMLineIndex", candidate.sdpMLineIndex);
-                jsonPut(candidateJson, "sdpMid", candidate.sdpMid);
-                jsonPut(candidateJson, "candidate", candidate.sdp);
+        JSONObject candidateJson = new JSONObject();
+        jsonPut(candidateJson, "sdpMLineIndex", candidate.sdpMLineIndex);
+        jsonPut(candidateJson, "sdpMid", candidate.sdpMid);
+        jsonPut(candidateJson, "candidate", candidate.sdp);
 
-                JSONObject json = new JSONObject();
-                jsonPut(json, "to", signalingSession.clientId);
-                jsonPut(json, "from", _selfID);
-                jsonPut(json, "candidate", candidateJson);
-                jsonPut(json, "session_id", signalingSession.sessionID);
-                send("ice-candidate", json);
-            }
-        });
+        JSONObject json = new JSONObject();
+        jsonPut(json, "to", signalingSession.clientId);
+        jsonPut(json, "from", _selfID);
+        jsonPut(json, "candidate", candidateJson);
+        jsonPut(json, "session_id", signalingSession.sessionID);
+        send("ice-candidate", json);
     }
 
     // Send removed Ice candidates to the other participant.
@@ -314,7 +283,17 @@ public class SocketIOClient implements AppRTCClient {
 
     //region: Helper functions
     private void send(String eventType, Object payload) {
-        Log.d(TAG, "Send - [" + eventType + "]" + payload.toString());
+        int MAX_COL = 3000;
+        String strPayload = payload.toString();
+        int numOfLines = strPayload.length() / MAX_COL;
+        for (int i = 0; i <= numOfLines; i++) {
+            int max = MAX_COL * (i + 1);
+            if (max >= strPayload.length()) {
+                Log.d(TAG, "Send(" + i + ")[" + eventType + "]" + strPayload.substring(MAX_COL * i));
+            } else {
+                Log.d(TAG, "Send(" + i + ")[" + eventType + "]" + strPayload.substring(MAX_COL * i, max));
+            }
+        }
         try {
             _client.emit(eventType, payload);
         } catch (Exception e) {
@@ -324,15 +303,10 @@ public class SocketIOClient implements AppRTCClient {
 
     private void reportError(final String errorMessage) {
         Log.e(TAG, "reportError : " + errorMessage);
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (roomState != ConnectionState.ERROR) {
-                    roomState = ConnectionState.ERROR;
-                    events.onChannelError(errorMessage);
-                }
-            }
-        });
+        if (roomState != ConnectionState.ERROR) {
+            roomState = ConnectionState.ERROR;
+            events.onChannelError(errorMessage);
+        }
     }
 
     // Put a |key|->|value| mapping in |json|.
